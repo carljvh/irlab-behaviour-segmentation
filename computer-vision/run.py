@@ -13,7 +13,7 @@ def run():
     clf = StatesClassifier(DATA_PATH)
     stationary_cutoff = clf.parse_cutoff(config["cutoff-frequencies"]["stationary_cutoff"])
     stationary_moving_cutoff = clf.parse_cutoff(config["cutoff-frequencies"]["stationary_moving_cutoff"])
-    clf.detect(DATA_PATH.joinpath("video").joinpath("example_2.mp4"), OUTPUT_PATH, stationary_cutoff, stationary_moving_cutoff)
+    clf.detect(DATA_PATH.joinpath("video").joinpath("long").joinpath("long_example_1.mp4"), OUTPUT_PATH, stationary_cutoff, stationary_moving_cutoff, consecutive_frame_count=5)
 
 
 if __name__ == "__main__":
