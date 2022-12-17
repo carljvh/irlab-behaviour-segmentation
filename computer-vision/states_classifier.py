@@ -54,12 +54,13 @@ class StatesClassifier:
 
     def detect(self, source: Path, dest: Path, stationary_cutoff, stationary_moving_cutoff, consecutive_frame_count: int = 3) -> None:
         cap = self.read(str(source))
-
+        """
         # define codec and create VideoWriter object
         frame_width = int(cap.get(3))
         frame_height = int(cap.get(4))
         save_name = str(dest.joinpath("output_test"))
         #out = cv.VideoWriter(save_name, cv.VideoWriter_fourcc(*"mp4v"), 10, (frame_width, frame_height))
+        """
 
         # background = self.get_aggregated_background(source.parent)
         dest = self.data_path.joinpath("backgrounds").joinpath(str(source.stem) + "_background.jpg")
@@ -84,9 +85,6 @@ class StatesClassifier:
                     mean_diff_count = np.sum(mean_frames)
                     
                     # TODO: Replace contours with highest, lowest, leftmost, rightmost pixel change?
-                    # TODO: Figure out how to best extrapolate cutoffs, doesn't work at the moment
-                    # TODO: Add column to data tagging each row with a state
-
                     contours, _ = cv.findContours(sum_frames, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
                     tuples = [(contour, cv.contourArea(contour)) for contour in contours]
                     max_tuple = max(tuples, key=lambda tup: tup[1])

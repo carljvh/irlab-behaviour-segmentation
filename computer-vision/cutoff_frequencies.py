@@ -51,9 +51,9 @@ def get_changed_pixel_counts(source_folder: Path, consecutive_frame_count: int =
 
 
 def main():
-    total_counts = get_changed_pixel_counts(DATA_PATH.joinpath("video"))
+    total_counts = get_changed_pixel_counts(DATA_PATH.joinpath("video").joinpath("short"))
     sns.histplot(data=total_counts, bins=100)
-    plt.savefig(OUTPUT_PATH.joinpath("frequency-results").joinpath("delta_histogram.png"), format="png")
+    plt.savefig(OUTPUT_PATH.joinpath("pixel_deltas.png"), format="png")
     plt.show()
 
 
