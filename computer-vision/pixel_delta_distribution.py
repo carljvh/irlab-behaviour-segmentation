@@ -63,8 +63,9 @@ def main():
     if not os.path.exists(source_folder):
         source_folder = get_data_path().joinpath("video").joinpath(video_length)
     output_path = get_output_path().joinpath("histograms")
-
-    total_counts = get_changed_pixel_counts(source_folder)
+    consecutive_frame_count = int(config["video-classification"]["consecutive_frame_count"])
+    
+    total_counts = get_changed_pixel_counts(source_folder, consecutive_frame_count)
     sns.histplot(data=total_counts, bins=n_bins)
     plt.savefig(output_path.joinpath("pixel_deltas_%s.png" % video_length), format="png")
 

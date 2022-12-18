@@ -22,7 +22,6 @@ def run():
     output_video = eval(video_conf["output_video"])
     video_dest = Path(video_conf["output_video_destination"])
     framerate = int(video_conf["framerate"])
-    states_dest = get_output_path().joinpath("states").joinpath(source.stem + "_states.csv")
 
     if not os.path.exists(source):
         source = get_data_path().joinpath("video").joinpath(video_length).joinpath(filename) 
@@ -32,6 +31,7 @@ def run():
     else:
         # Fix output dest None to default or something better
         output_dest = None
+    states_dest = get_output_path().joinpath("states").joinpath(source.stem + "_states.csv")
 
     clf = StatesClassifier(stat_cutoff, stat_move_cutoff, fps=framerate)
     states = clf.classify(source, consecutive_frame_count, render_video, output_video, output_dest)
