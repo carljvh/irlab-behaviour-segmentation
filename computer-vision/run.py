@@ -24,8 +24,8 @@ def run():
     framerate = int(video_conf["framerate"])
 
     if not os.path.exists(source):
-        source = get_data_path().joinpath("video").joinpath(video_length).joinpath(filename) 
-    
+        source = get_data_path().joinpath("video").joinpath(video_length).joinpath(filename)
+
     if os.path.exists(video_dest):
         output_dest = Path(video_dest).joinpath(source.name)
     else:

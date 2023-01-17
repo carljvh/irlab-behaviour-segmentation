@@ -45,6 +45,15 @@ def process_frame(frame: np.ndarray, background: np.ndarray) -> np.ndarray:
     return dilate_frame
 
 
+def find_max_contour(frame_diff_list: list):
+    sum_frames = np.sum(frame_diff_list, axis=0, dtype=np.uint8)
+    contours, _ = cv.findContours(sum_frames, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    tuples = [(contour, cv.contourArea(contour)) for contour in contours]
+    max_tuple = max(tuples, key=lambda tup: tup[1])
+    max_contour = max_tuple[0]
+    return max_contour
+
+
 def generate_background(source: Path, dest: Path = None, frame_sample_count: int = 120) -> np.ndarray:
     background_source = get_data_path().joinpath("backgrounds")
     background_path = background_source.joinpath("bg_" + str(source.stem) + ".jpg")
