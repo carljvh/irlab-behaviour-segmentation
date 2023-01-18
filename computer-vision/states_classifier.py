@@ -18,7 +18,6 @@ class StatesClassifier:
         self.stationary_cutoff = stationary_cutoff
         self.stationary_movement_cutoff = stationary_movement_cutoff
         self.fps = fps
-        self.mean_diff_count = 0
 
     def get_output_object(self, cap, dest: Path = None):
         frame_width = int(cap.get(3))
@@ -35,24 +34,21 @@ class StatesClassifier:
         )
         return out
 
-    def classify_state(self, frame_diff_list: list):
-        mean_diff = np.mean(frame_diff_list, axis=0).astype(np.uint8)
-        max_contour = find_max_contour(frame_diff_list)
-        cv.drawContours(mean_diff, max_contour, -1, 0, -1)
-        new_diff_count = cv.countNonZero(mean_diff)
-        delta_count = np.abs(new_diff_count - self.mean_diff_count)
-        self.mean_diff_count = new_diff_count
+    def classify_state(self, sum_frames: np.ndarray):
+        max_contour = find_max_contour(sum_frames)
+        blank_img = np.zeros(sum_frames.shape[:2], dtype=np.uint8)
+        cv.fillPoly(blank_img, pts=[max_contour], color=(255,255,255))
+        count = cv.countNonZero(blank_img)
 
-        if delta_count < self.stationary_cutoff:
+        if count < self.stationary_cutoff:
             state = State.STATIONARY
-        elif self.stationary_cutoff < delta_count < self.stationary_movement_cutoff:
+        elif self.stationary_cutoff < count < self.stationary_movement_cutoff:
             state = State.STATIONARY_MOVEMENT
         else:
             state = State.MOVEMENT
         return state
 
-    def render_video_metadata(self, orig_frame: np.ndarray, frame_diff_list: list, state_name: str):
-        max_contour = find_max_contour(frame_diff_list)
+    def render_video_metadata(self, orig_frame: np.ndarray, max_contour, state_name: str):
         (x, y, w, h) = cv.boundingRect(max_contour)
         cv.rectangle(orig_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
         cv.putText(orig_frame, "Status: {}".format(state_name), (10, 20), cv.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 3)
@@ -75,35 +71,33 @@ class StatesClassifier:
         background = generate_background(source)
         background = cv.cvtColor(background, cv.COLOR_BGR2GRAY)
 
-        frame_diffs = deque(maxlen=consecutive_frame_count)
-        for _ in range(consecutive_frame_count):
-            _, frame = cap.read()
-            processed_diff = process_frame(frame, background)
-            frame_diffs.append(processed_diff)
-        state = self.classify_state(list(frame_diffs))
-        states[: consecutive_frame_count - 1] = state.value
-
-        for frame_count in tqdm(range(consecutive_frame_count, total_frame_count)):
-            _, frame = cap.read()
+        frame_diffs = []
+        state = State.STATIONARY
+        for frame_count in tqdm(range(total_frame_count)):
+            ret, frame = cap.read()
             orig_frame = frame.copy()
+            if ret == True:
+                processed_diff = process_frame(frame, background)
+                frame_diffs.append(processed_diff)
+                sum_frames = np.sum(frame_diffs, axis=0, dtype=np.uint8)
+                max_contour = find_max_contour(sum_frames)
 
-            frame_diffs.popleft()
-            processed_diff = process_frame(frame, background)
-            frame_diffs.append(processed_diff)
+                if (frame_count + 1) % consecutive_frame_count == 0:
+                    state = self.classify_state(sum_frames)
+                    states[frame_count + 1 - consecutive_frame_count:frame_count] = state.value
+                    frame_diffs.clear()
 
-            state = self.classify_state(list(frame_diffs))
-            states[frame_count] = state.value
+                if render_video:
+                    modified_frame = self.render_video_metadata(orig_frame, max_contour, state.name)
+                    cv.imshow("subject", modified_frame)
+                    if cv.waitKey(10) & 0xFF == ord("q"):
+                        break
 
-            if render_video:
-                modified_frame = self.render_video_metadata(orig_frame, list(frame_diffs), state.name)
-                cv.imshow("subject", modified_frame)
-                if cv.waitKey(10) & 0xFF == ord("q"):
-                    break
-
-            if output_video:
-                modified_frame = self.render_video_metadata(orig_frame, list(frame_diffs), state.name)
-                out.write(modified_frame)
-
+                if output_video:
+                    modified_frame = self.render_video_metadata(orig_frame, max_contour, state.name)
+                    out.write(modified_frame)
+            else:
+                break
         cap.release()
         cv.destroyAllWindows()
         return states
