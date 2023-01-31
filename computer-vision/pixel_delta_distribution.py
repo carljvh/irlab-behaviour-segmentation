@@ -5,7 +5,6 @@ from pathlib import Path
 import cv2 as cv
 import os
 from tqdm import tqdm
-from collections import deque
 import configparser
 from utils import (
     get_data_path,
